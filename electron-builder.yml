@@ -1,0 +1,35 @@
+appId: com.datpro.desktop
+productName: DAT Pro
+publish:
+  provider: github
+  owner: Shahmir-2-0
+  repo: DAT_Pro_Desktop
+  releaseType: release
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist/**/*
+  - electron/**/*
+  - package.json
+asar: true
+win:
+  icon: build/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: "${productName}-Setup-${version}.${ext}"
+mac:
+  icon: build/icon.png
+  target:
+    - target: dmg
+      arch:
+        - x64
+        - arm64
+  artifactName: "${productName}-${version}-${arch}.${ext}"
+  category: public.app-category.business
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: always

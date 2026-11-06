@@ -1,0 +1,157 @@
+/* OTP screen — same visual language as LoginScreen. */
+
+.otp-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100vh;
+  background: var(--auth-bg);
+  position: relative;
+  overflow: hidden;
+}
+
+.otp-glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--otp-glow) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.otp-card {
+  position: relative;
+  z-index: 2;
+  width: 420px;
+  max-width: 90vw;
+  padding: 36px 32px;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(16px);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.otp-header {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.otp-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.otp-header h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.otp-sub {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.otp-info {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.otp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.otp-input {
+  width: 100%;
+  padding: 16px;
+  text-align: center;
+  font-size: 24px;
+  letter-spacing: 12px;
+  font-family: 'Segoe UI', monospace;
+  background: var(--input-bg);
+  color: var(--text);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  user-select: text;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.otp-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--input-focus);
+}
+
+.otp-error {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-h);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  text-align: center;
+}
+
+.otp-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.otp-btn:hover:not(:disabled) {
+  background: var(--primary-h);
+}
+
+.otp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.otp-footer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.otp-link {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 0;
+  transition: color 0.15s;
+}
+
+.otp-link:hover:not(:disabled) {
+  color: var(--primary);
+}
+
+.otp-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

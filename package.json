@@ -1,0 +1,32 @@
+{
+  "name": "dat-desktop",
+  "version": "3.0.3",
+  "private": true,
+  "description": "DAT Pro Desktop — Electron + React shell for embedded DAT access",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k -n VITE,ELECTRON -c cyan,yellow \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on tcp:5173 && cross-env NODE_ENV=development electron .",
+    "build": "vite build",
+    "preview": "cross-env NODE_ENV=production electron .",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:mac": "npm run build && electron-builder --mac"
+  },
+  "dependencies": {
+    "crypto-js": "^4.2.0",
+    "electron-updater": "^6.8.11",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^5.4.11",
+    "wait-on": "^8.0.1"
+  }
+}

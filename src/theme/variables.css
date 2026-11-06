@@ -1,0 +1,106 @@
+/* DAT Pro Design System
+ *
+ * Light theme is the DEFAULT (no attribute needed).
+ * Dark theme kicks in when <html data-theme="dark"> is set
+ * (managed by src/theme/ThemeProvider.jsx).
+ *
+ * Everything in the app reads from these variables — never hardcode colors
+ * in component CSS or the theme toggle will leave stale patches behind.
+ */
+
+/* ─────────────────────────── LIGHT (default) ─────────────────────────── */
+:root {
+  /* surfaces */
+  --bg:            #f8fafc;
+  --bg-secondary:  #ffffff;
+  --card-bg:       #ffffff;
+  --card-border:   #e2e8f0;
+  --border:        #e2e8f0;
+
+  /* text */
+  --text:          #0f172a;
+  --text-muted:    #475569;
+  --text-dim:      #94a3b8;
+
+  /* brand */
+  --primary:       #3b82f6;
+  --primary-h:     #2563eb;
+  --primary-glow:  rgba(59, 130, 246, 0.22);
+
+  /* semantic */
+  --danger:        #ef4444;
+  --danger-h:      #dc2626;
+  --danger-border: #fecaca;
+  --success:       #10b981;
+  --accent:        #0ea5e9;
+
+  /* inputs */
+  --input-bg:      #ffffff;
+  --input-border:  #cbd5e1;
+  --input-focus:   rgba(59, 130, 246, 0.18);
+
+  /* elevation */
+  --shadow:        0 6px 20px rgba(15, 23, 42, 0.08);
+
+  /* shapes */
+  --radius:        12px;
+  --radius-sm:     8px;
+  --radius-pill:   50px;
+
+  /* auth-screen (login / otp) backgrounds */
+  --auth-bg:       radial-gradient(circle at 50% 20%, #dbeafe 0%, #f8fafc 70%);
+  --auth-glow:     rgba(59, 130, 246, 0.14);
+  --otp-glow:      rgba(16, 185, 129, 0.14);
+}
+
+/* ─────────────────────────────── DARK ────────────────────────────────── */
+[data-theme="dark"] {
+  --bg:            #050505;
+  --bg-secondary:  #0a0d14;
+  --card-bg:       linear-gradient(145deg, #0f121a 0%, #090a0f 100%);
+  --card-border:   #1e293b;
+  --border:        #1e293b;
+
+  --text:          #f8fafc;
+  --text-muted:    #94a3b8;
+  --text-dim:      #475569;
+
+  --primary-glow:  rgba(59, 130, 246, 0.40);
+
+  --danger-border: #991b1b;
+
+  --input-bg:      #0f172a;
+  --input-border:  #334155;
+  --input-focus:   rgba(59, 130, 246, 0.30);
+
+  --shadow:        0 8px 32px rgba(0, 0, 0, 0.60);
+
+  --auth-bg:       radial-gradient(circle at 50% 20%, #172554 0%, #050505 70%);
+  --auth-glow:     rgba(59, 130, 246, 0.15);
+  --otp-glow:      rgba(16, 185, 129, 0.15);
+}
+
+/* ─────────────────────────────── reset ───────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar — gently adapts to theme */
+::-webkit-scrollbar      { width: 6px; height: 6px; }
+::-webkit-scrollbar-track{ background: transparent; }
+::-webkit-scrollbar-thumb{ background: var(--border); border-radius: var(--radius-pill); }
+::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
