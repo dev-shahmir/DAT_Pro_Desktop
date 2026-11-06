@@ -1,7 +1,8 @@
-/* OTP screen — same visual language as LoginScreen. */
+/* OTP screen — matches DAT Pro extension design */
 
 .otp-container {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100vw;
@@ -13,27 +14,76 @@
 
 .otp-glow {
   position: absolute;
-  width: 500px;
-  height: 500px;
+  width: 600px;
+  height: 600px;
   background: radial-gradient(circle, var(--otp-glow) 0%, transparent 70%);
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
 }
 
+/* Top bar */
+.otp-topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+  -webkit-app-region: drag;
+}
+
+.otp-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.otp-topbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 1px;
+}
+
+.otp-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.otp-dat-blocks { display: flex; gap: 3px; }
+.otp-dat-block {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  color: #fff; display: flex; align-items: center; justify-content: center;
+  font-weight: 900; font-size: 15px; border-radius: 5px;
+}
+.otp-dat-pro-badge {
+  background: linear-gradient(135deg, #3b82f6, #60a5fa);
+  color: #fff; font-size: 10px; font-weight: 700;
+  padding: 2px 6px; border-radius: 3px; letter-spacing: 1px;
+}
+
+/* Card */
 .otp-card {
   position: relative;
   z-index: 2;
-  width: 420px;
-  max-width: 90vw;
-  padding: 36px 32px;
+  width: 440px;
+  max-width: 92vw;
+  padding: 32px 28px 24px;
   background: var(--card-bg);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 16px;
   box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -44,31 +94,29 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
 }
 
-.otp-icon {
-  font-size: 32px;
-  margin-bottom: 4px;
+.otp-icon { font-size: 40px; margin-bottom: 4px; }
+
+.otp-welcome {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 14px;
 }
 
-.otp-header h2 {
+.otp-brand {
   margin: 0;
   color: var(--text);
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 24px;
+  font-weight: 700;
 }
 
 .otp-sub {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 13px;
-}
-
-.otp-info {
   margin: 4px 0 0;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .otp-form {
@@ -77,20 +125,34 @@
   gap: 16px;
 }
 
+.otp-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.otp-input-group label {
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.otp-input-wrapper { position: relative; }
+
 .otp-input {
   width: 100%;
   padding: 16px;
   text-align: center;
-  font-size: 24px;
-  letter-spacing: 12px;
+  font-size: 20px;
+  letter-spacing: 10px;
   font-family: 'Segoe UI', monospace;
   background: var(--input-bg);
   color: var(--text);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
   outline: none;
-  user-select: text;
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .otp-input:focus {
@@ -99,29 +161,31 @@
 }
 
 .otp-error {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(239, 68, 68, 0.08);
   border: 1px solid var(--danger-border);
-  color: var(--danger-h);
-  padding: 8px 12px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
+  color: var(--danger);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
   text-align: center;
 }
 
 .otp-btn {
-  background: var(--primary);
+  padding: 14px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
   color: #fff;
   border: none;
-  padding: 12px;
-  border-radius: var(--radius-sm);
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px var(--primary-glow);
 }
 
 .otp-btn:hover:not(:disabled) {
-  background: var(--primary-h);
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  transform: translateY(-1px);
 }
 
 .otp-btn:disabled {
@@ -129,29 +193,45 @@
   cursor: not-allowed;
 }
 
-.otp-footer-row {
+.otp-actions {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  gap: 10px;
+}
+
+.otp-outline-btn {
+  flex: 1;
+  padding: 12px;
+  background: transparent;
+  color: var(--primary);
+  border: 1.5px solid var(--input-border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.otp-outline-btn:hover:not(:disabled) {
+  background: var(--input-focus);
+  border-color: var(--primary);
+}
+
+.otp-outline-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.otp-footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-dim);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   padding-top: 8px;
   border-top: 1px solid var(--border);
 }
 
-.otp-link {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 4px 0;
-  transition: color 0.15s;
-}
-
-.otp-link:hover:not(:disabled) {
+.otp-footer strong {
   color: var(--primary);
-}
-
-.otp-link:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }

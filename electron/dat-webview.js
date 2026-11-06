@@ -161,8 +161,17 @@ async function clearDat() {
   const ses = getDatSession();
   try { await ses.clearStorageData(); } catch (_) {}
   try { await ses.clearCache(); } catch (_) {}
+  try { await ses.cookies.flushStore(); } catch (_) {}
+  try {
+    const cookies = await ses.cookies.get({});
+    for (const c of cookies) {
+      const url = (c.secure ? 'https://' : 'http://') + (c.domain || '').replace(/^\./, '') + (c.path || '/');
+      await ses.cookies.remove(url, c.name).catch(() => {});
+    }
+  } catch (_) {}
+  try { await ses.setProxy({ proxyRules: '' }); } catch (_) {}
   currentStatus = { state: 'idle', proxy: null, error: null };
-  console.log('[dat] session cleared');
+  console.log('[dat] session cleared (cookies, cache, proxy, storage)');
 }
 
 // Returns proxy credentials for app.on('login') proxy-auth callbacks.

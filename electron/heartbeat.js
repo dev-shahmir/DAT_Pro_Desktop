@@ -15,7 +15,7 @@
  * so the UI returns to the login screen.
  */
 const BASE = 'https://dat-pro-backend.onrender.com/';
-const APP_VERSION = '3.0.2';
+const APP_VERSION = '3.0.5';
 
 const HEARTBEAT_MS      = 60_000;
 const CHECK_SESSION_MS  = 15_000;
@@ -123,6 +123,29 @@ async function sendHeartbeat() {
     console.log('[heartbeat] session dead:', reason);
     stop();
     if (deps.onSessionDead) deps.onSessionDead(reason);
+    return;
+  }
+
+  // Detect proxy change by admin — host or port differ from local session.
+  if (r.host && r.port && s.host && s.port) {
+    if (r.host !== s.host || String(r.port) !== String(s.port)) {
+      console.log('[heartbeat] proxy changed by admin — forcing re-login');
+      stop();
+      if (deps.onProxyChanged) deps.onProxyChanged();
+      return;
+    }
+  }
+
+  // Detect session update by super admin — cookie_session_updated_at changed.
+  if (r.cookie_session_updated_at && s.cookie_session_updated_at) {
+    const serverTime = new Date(r.cookie_session_updated_at).getTime();
+    const localTime = new Date(s.cookie_session_updated_at).getTime();
+    if (!isNaN(serverTime) && !isNaN(localTime) && serverTime !== localTime) {
+      console.log('[heartbeat] session updated by admin — forcing re-login');
+      stop();
+      if (deps.onSessionUpdated) deps.onSessionUpdated();
+      return;
+    }
   }
 }
 

@@ -2,7 +2,7 @@ appId: com.datpro.desktop
 productName: DAT Pro
 publish:
   provider: github
-  owner: Shahmir-2-0
+  owner: dev-shahmir
   repo: DAT_Pro_Desktop
   releaseType: release
 directories:
@@ -19,7 +19,7 @@ win:
     - target: nsis
       arch:
         - x64
-  artifactName: "${productName}-Setup-${version}.${ext}"
+  artifactName: "DATPro-Setup-${version}.${ext}"
 mac:
   icon: build/icon.png
   target:

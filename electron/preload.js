@@ -28,6 +28,8 @@ contextBridge.exposeInMainWorld('datProAPI', {
   login:            (credentials) => ipcRenderer.invoke('auth:login', credentials),
   verifyOtp:        (payload)     => ipcRenderer.invoke('auth:verify-otp', payload),
   resendOtp:        (email)       => ipcRenderer.invoke('auth:resend-otp', email),
+  forgotPassword:   (email)       => ipcRenderer.invoke('auth:forgot-password', email),
+  verifyForgotOtp:  (payload)     => ipcRenderer.invoke('auth:verify-forgot-otp', payload),
   logout:           ()            => ipcRenderer.invoke('auth:logout'),
   getSavedEmail:    ()            => ipcRenderer.invoke('auth:get-saved-email'),
   saveEmail:        (email)       => ipcRenderer.invoke('auth:save-email', email),
@@ -48,6 +50,7 @@ contextBridge.exposeInMainWorld('datProAPI', {
   // old, logged in elsewhere, etc). Payload: { reason: string }.
   // Returns an unsubscribe function — call it in React cleanup.
   onSessionDead: (callback) => subscribe('session:dead', callback),
+  onSessionUpdated: (callback) => subscribe('session:updated', callback),
 
   // ── Admin / Super Admin (Phase 6) ─────────────────────────────────────────
   admin: {
@@ -77,6 +80,9 @@ contextBridge.exposeInMainWorld('datProAPI', {
     exportActivityLog:  (params)  => ipcRenderer.invoke('admin:export-activity-log', params),
     getActivityStats:   (params)  => ipcRenderer.invoke('admin:get-activity-stats', params),
   },
+
+  // ── Connection monitor (Phase 9) ────────────────────────────────────────
+  onConnectionStatus: (cb) => subscribe('connection:status', cb),
 
   // ── Auto-update (Phase 8) ───────────────────────────────────────────────
   update: {

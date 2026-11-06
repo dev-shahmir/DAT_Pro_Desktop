@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { ThemeToggle } from '../../theme/ThemeProvider';
 import './OtpScreen.css';
 
-/*
- * First-time login OTP screen. Triggered when /login/ returns
- * { success: true, needsOtp: true }.
- *
- * Props:
- *   email       - string, the email awaiting OTP (shown masked)
- *   onVerified  - (role) => void
- *   onCancel    - () => void  (back to login)
- */
 export default function OtpScreen({ email, onVerified, onCancel }) {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -17,7 +9,6 @@ export default function OtpScreen({ email, onVerified, onCancel }) {
   const [info, setInfo] = useState(null);
   const [resending, setResending] = useState(false);
 
-  // Mask email for display: s•••••@gmail.com
   const masked = email
     ? email.replace(/^([^@])[^@]*(@.*)$/, (_, a, b) => `${a}${'•'.repeat(5)}${b}`)
     : '';
@@ -65,55 +56,70 @@ export default function OtpScreen({ email, onVerified, onCancel }) {
   return (
     <div className="otp-container">
       <div className="otp-glow" />
+
+      <div className="otp-topbar">
+        <div className="otp-topbar-left">
+          <div className="otp-dat-blocks">
+            <span className="otp-dat-block">D</span>
+            <span className="otp-dat-block">A</span>
+            <span className="otp-dat-block">T</span>
+          </div>
+          <span className="otp-dat-pro-badge">PRO</span>
+        </div>
+        <span className="otp-topbar-title">SIGN IN</span>
+        <div className="otp-topbar-right">
+          <ThemeToggle />
+        </div>
+      </div>
+
       <div className="otp-card">
         <div className="otp-header">
-          <div className="otp-icon">🔐</div>
-          <h2>Enter Verification Code</h2>
-          <p className="otp-sub">
-            First-time login requires a one-time code.
-          </p>
-          {info && <p className="otp-info">{info}</p>}
+          <div className="otp-icon">🛡️</div>
+          <p className="otp-welcome">First-Time Verification</p>
+          <h2 className="otp-brand">Enter OTP</h2>
+          {info && <p className="otp-sub">{info}</p>}
         </div>
 
         <form className="otp-form" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={6}
-            pattern="\d{6}"
-            placeholder="••••••"
-            className="otp-input"
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-            autoFocus
-            required
-          />
+          <div className="otp-input-group">
+            <label htmlFor="otp-code">ONE-TIME PASSWORD</label>
+            <div className="otp-input-wrapper">
+              <input
+                id="otp-code"
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                maxLength={6}
+                pattern="\d{6}"
+                placeholder="••••••"
+                className="otp-input"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                autoFocus
+                required
+              />
+            </div>
+          </div>
 
           {error && <div className="otp-error">{error}</div>}
 
           <button type="submit" className="otp-btn" disabled={loading || otp.length !== 6}>
             {loading ? 'Verifying…' : 'Verify & Continue'}
           </button>
+
+          <div className="otp-actions">
+            <button type="button" className="otp-outline-btn" onClick={onCancel} disabled={loading}>
+              ← Back
+            </button>
+            <button type="button" className="otp-outline-btn" onClick={handleResend} disabled={loading || resending}>
+              {resending ? 'Sending…' : 'Resend Code'}
+            </button>
+          </div>
         </form>
 
-        <div className="otp-footer-row">
-          <button
-            type="button"
-            className="otp-link"
-            onClick={onCancel}
-            disabled={loading}
-          >
-            ← Back to login
-          </button>
-          <button
-            type="button"
-            className="otp-link"
-            onClick={handleResend}
-            disabled={loading || resending}
-          >
-            {resending ? 'Sending…' : 'Resend code'}
-          </button>
+        <div className="otp-footer">
+          <span>Contact Administrator: <strong>simon.adam.dean@gmail.com</strong></span>
+          <span>Developed by <strong>Shahmir Ahmad</strong></span>
         </div>
       </div>
     </div>

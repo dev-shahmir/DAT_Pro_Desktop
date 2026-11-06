@@ -101,6 +101,24 @@ async function resendOtp(email) {
   };
 }
 
+async function forgotPassword(email) {
+  if (!email) return { success: false, message: 'Email required.' };
+  const r = await post('forgot-password/', { email });
+  return {
+    success: !!r.success,
+    message: r.message || (r.success ? 'OTP sent.' : 'Could not send OTP.'),
+  };
+}
+
+async function verifyForgotOtp({ email, otp } = {}) {
+  if (!email || !otp) return { success: false, message: 'Email and OTP required.' };
+  const r = await post('verify-forgot-otp/', { email, otp });
+  return {
+    success: !!r.success,
+    message: r.message || (r.success ? 'Password sent to your email.' : 'Verification failed.'),
+  };
+}
+
 async function logout() {
   if (!currentSession) return { success: true };
   const { secret_key, session_id, email } = currentSession;
@@ -150,6 +168,8 @@ module.exports = {
   login,
   verifyOtp,
   resendOtp,
+  forgotPassword,
+  verifyForgotOtp,
   logout,
   getCurrentSession,
   refreshSession,

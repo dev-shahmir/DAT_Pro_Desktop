@@ -7,6 +7,7 @@ const heartbeat = require('./heartbeat');
 const admin = require('./admin');
 const { lockCss, lockJs } = require('./dat-guard');
 const updater = require('./updater');
+const connMonitor = require('./connection-monitor');
 
 // Phase 0 saw "GPU state invalid after WaitForGetOffsetInRange" on some
 // Windows setups which caused a blank window. Disable HW accel to sidestep it.
@@ -190,6 +191,11 @@ app.on('web-contents-created', (_e, contents) => {
   contents.on('did-fail-load', (_e, code, desc, url) => {
     if (code === -3 && url.includes('prompt=none')) return;
     console.log('[dat-webview] fail-load:', code, desc, url);
+    // Proxy / network failures surface as specific error codes.
+    // -130 = ERR_PROXY_CONNECTION_FAILED, -105/-106 = DNS, -2 = FAILED (generic net)
+    if ([-130, -105, -106, -2, -7, -21, -100, -101, -102, -118].includes(code)) {
+      connMonitor.reportProxyError(desc || `Connection error (${code})`);
+    }
   });
 
   // ── Phase 5: expose this webContents to heartbeat + record nav events ──
@@ -225,6 +231,9 @@ app.whenReady().then(() => {
   // ── Auto-updater (Phase 8) ──────────────────────────────────────────────
   if (!isDev) updater.init(mainWindow);
 
+  // ── Connection monitor (Phase 9) ──────────────────────────────────────
+  connMonitor.init(mainWindow);
+
   // ── Resume from sleep/hibernate ───────────────────────────────────────────
   // When the OS wakes, heartbeat timers may have been frozen for hours and the
   // backend may have killed the session. Probe the backend immediately: if the
@@ -245,10 +254,10 @@ app.whenReady().then(() => {
       console.log('[main] session expired during sleep — cleaning up');
       heartbeat.stop();
       auth.forceClear();
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('session:dead', { reason: 'Session expired while away.' });
-      }
       try { await dat.clearDat(); } catch (_) {}
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('session:dead', { reason: 'Session expired while your device was asleep. Please login again.' });
+      }
     }
   });
 
@@ -289,9 +298,9 @@ app.on('before-quit', (event) => {
   console.log('[main] logging out before quit…');
   (async () => {
     try { heartbeat.stop();        console.log('[main]  ✓ heartbeat stopped'); } catch (e) { console.log('[main] hb stop err:', e && e.message); }
-    try { await withTimeout(auth.logout(),   3000); console.log('[main]  ✓ logout sent'); }
-    catch (_) {}
     try { await withTimeout(dat.clearDat(),  2000); console.log('[main]  ✓ dat partition wiped'); }
+    catch (_) {}
+    try { await withTimeout(auth.logout(),   3000); console.log('[main]  ✓ logout sent'); }
     catch (_) {}
     console.log('[main] exiting now');
     app.exit(0); // hard exit — no further events
@@ -305,14 +314,35 @@ function startHeartbeat() {
     getSession: () => auth.getCurrentSession(),
     getWebview: () => dat.getDatWebContents(),
     onSessionDead: async (reason) => {
+      try { await dat.clearDat(); } catch (_) {}
       auth.forceClear();
-      // Tell the renderer FIRST so it unmounts the DAT webview before we wipe
-      // the partition — otherwise the webview briefly shows DAT's own landing
-      // page while its cookies are being cleared.
       if (mainWindow && !mainWindow.isDestroyed()) {
         try { mainWindow.webContents.send('session:dead', { reason }); } catch (_) {}
       }
+    },
+    onSessionUpdated: async () => {
       try { await dat.clearDat(); } catch (_) {}
+      try { await auth.logout(); } catch (_) {}
+      auth.forceClear();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        try {
+          mainWindow.webContents.send('session:updated', {
+            reason: 'Your session has been updated by the administrator. Please login again to continue with the new session.',
+          });
+        } catch (_) {}
+      }
+    },
+    onProxyChanged: async () => {
+      try { await dat.clearDat(); } catch (_) {}
+      try { await auth.logout(); } catch (_) {}
+      auth.forceClear();
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        try {
+          mainWindow.webContents.send('session:updated', {
+            reason: 'Your proxy has been changed by the administrator. Please login again to connect with the new proxy.',
+          });
+        } catch (_) {}
+      }
     },
   });
 }
@@ -353,6 +383,8 @@ ipcMain.handle('auth:verify-otp', async (_e, payload) => {
   return r;
 });
 ipcMain.handle('auth:resend-otp', (_e, email) => auth.resendOtp(email));
+ipcMain.handle('auth:forgot-password', (_e, email) => auth.forgotPassword(email));
+ipcMain.handle('auth:verify-forgot-otp', (_e, payload) => auth.verifyForgotOtp(payload));
 ipcMain.handle('auth:logout', async () => {
   try { heartbeat.stop(); } catch (_) {}
   try { await dat.clearDat(); } catch (_) {}  // wipe the DAT partition

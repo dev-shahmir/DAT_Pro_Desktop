@@ -1,7 +1,7 @@
-const { autoUpdater } = require('electron-updater');
 const { ipcMain } = require('electron');
 
 let win = null;
+let autoUpdater = null;
 
 function send(channel, data) {
   if (win && !win.isDestroyed()) {
@@ -11,6 +11,13 @@ function send(channel, data) {
 
 function init(mainWindow) {
   win = mainWindow;
+
+  try {
+    autoUpdater = require('electron-updater').autoUpdater;
+  } catch (e) {
+    console.log('[updater] electron-updater not available:', e.message);
+    return;
+  }
 
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
