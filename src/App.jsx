@@ -17,6 +17,7 @@ export default function App() {
   const [pendingEmail, setPendingEmail] = useState(null);
   const [busy, setBusy] = useState(false);
   const [updateState, setUpdateState] = useState(null); // null | 'available' | 'downloading' | 'ready'
+  const [updateDetected, setUpdateDetected] = useState(false); // stays true once update found — blocks login
   const [updateVersion, setUpdateVersion] = useState('');
   const [updatePercent, setUpdatePercent] = useState(0);
   const [connIssue, setConnIssue] = useState(null); // null | { type, detail?, dismissable? }
@@ -49,7 +50,7 @@ export default function App() {
     const api = window.datProAPI;
     if (!api || !api.update) return;
     const unsubs = [
-      api.update.onAvailable(({ version }) => { setUpdateVersion(version); setUpdateState('available'); }),
+      api.update.onAvailable(({ version }) => { setUpdateVersion(version); setUpdateState('available'); setUpdateDetected(true); }),
       api.update.onProgress(({ percent }) => { setUpdatePercent(percent); }),
       api.update.onDownloaded(() => { setUpdateState('ready'); }),
       api.update.onError(() => { setUpdateState(null); }),
@@ -133,7 +134,7 @@ export default function App() {
         <LoginScreen
           onLoginSuccess={(role) => { setScreen(role); }}
           onNeedsOtp={(email) => { setPendingEmail(email); setScreen('otp'); }}
-          updateAvailable={!!updateState}
+          updateAvailable={updateDetected}
         />
       )}
 
@@ -170,7 +171,6 @@ export default function App() {
           percent={updatePercent}
           onDownload={handleUpdateDownload}
           onInstall={handleUpdateInstall}
-          onDismiss={() => setUpdateState(null)}
         />
       )}
 
@@ -188,30 +188,28 @@ export default function App() {
   );
 }
 
-function UpdateBanner({ state, version, percent, onDownload, onInstall, onDismiss }) {
+function UpdateBanner({ state, version, percent, onDownload, onInstall }) {
   const bannerStyle = {
-    position: 'fixed', bottom: 20, right: 20, zIndex: 1000,
-    background: 'rgba(34, 197, 94, 0.12)', border: '1px solid rgba(34, 197, 94, 0.5)',
-    color: '#4ade80', padding: '12px 18px', borderRadius: 8, fontSize: 13,
-    display: 'flex', alignItems: 'center', gap: 12,
-    backdropFilter: 'blur(10px)', boxShadow: '0 8px 24px rgba(0,0,0,0.25)', maxWidth: '90vw',
+    position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
+    background: 'var(--card-bg, #ffffff)', border: '1px solid var(--primary, #3b82f6)',
+    color: 'var(--text, #0f172a)', padding: '16px 24px', borderRadius: 'var(--radius, 12px)', fontSize: 14,
+    display: 'flex', alignItems: 'center', gap: 14,
+    backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px var(--primary-glow, rgba(59,130,246,0.22))', maxWidth: '90vw',
   };
   const btnStyle = {
-    background: '#22c55e', color: '#000', border: 'none', borderRadius: 6,
-    padding: '5px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12,
+    background: 'var(--primary, #3b82f6)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm, 8px)',
+    padding: '7px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
   };
   return (
     <div style={bannerStyle}>
       {state === 'available' && <>
         <span>Update v{version} available</span>
         <button style={btnStyle} onClick={onDownload}>Download</button>
-        <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.7 }}>×</button>
       </>}
-      {state === 'downloading' && <span>Downloading update… {percent}%</span>}
+      {state === 'downloading' && <span>Downloading update… {Math.round(percent)}%</span>}
       {state === 'ready' && <>
         <span>Update ready — restart to apply</span>
         <button style={btnStyle} onClick={onInstall}>Restart Now</button>
-        <button onClick={onDismiss} style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', opacity: 0.7 }}>×</button>
       </>}
     </div>
   );

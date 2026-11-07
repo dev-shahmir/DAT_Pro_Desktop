@@ -9,8 +9,12 @@
  * webview partition.
  * Phase 5 will add heartbeat + check-session timers reading from here.
  */
+const { app } = require('electron');
 const BASE = 'https://dat-pro-backend.onrender.com/';
-const APP_VERSION = '3.0.3'; // backend MIN_VERSION is 3.0.1 — this is safely above
+// Real app version from package.json — never hardcode (the backend gates login
+// on this against MIN_APP_VERSION). Fallback only if app isn't ready yet.
+const APP_VERSION = (() => { try { return app.getVersion(); } catch (_) { return '0.0.0'; } })();
+const PLATFORM = 'app';
 
 // In-memory only. Never persisted.
 let currentSession = null;
@@ -54,6 +58,7 @@ async function login({ email, password } = {}) {
   const r = await post('login/', {
     email, password,
     versionN: APP_VERSION,
+    platform: PLATFORM,
   });
   if (!r.success) {
     return {
@@ -83,7 +88,7 @@ async function verifyOtp({ email, otp } = {}) {
   if (!email || !otp) {
     return { success: false, message: 'Email and OTP required.' };
   }
-  const r = await post('verify-otp/', { email, otp });
+  const r = await post('verify-otp/', { email, otp, platform: PLATFORM });
   if (!r.success) {
     return { success: false, message: r.message || 'OTP verification failed.' };
   }
@@ -145,7 +150,7 @@ async function refreshSession() {
     return { success: false, message: 'Not logged in.' };
   }
   const { secret_key, session_id } = currentSession;
-  const r = await post('refresh/', { secret_key, session_id, versionN: APP_VERSION });
+  const r = await post('refresh/', { secret_key, session_id, versionN: APP_VERSION, platform: PLATFORM });
   if (!r || !r.success) {
     return { success: false, message: (r && r.message) || 'Refresh failed.' };
   }

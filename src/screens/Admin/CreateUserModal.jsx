@@ -9,6 +9,7 @@ export default function CreateUserModal({ onClose, onCreated, onError }) {
   const [password, setPassword]       = useState('');
   const [username, setUsername]       = useState('');
   const [role, setRole]               = useState('user');
+  const [platform, setPlatform]       = useState('both');
   const [proxyHost, setProxyHost]     = useState('');
   const [proxyPort, setProxyPort]     = useState('');
   const [proxyUser, setProxyUser]     = useState('');
@@ -31,6 +32,7 @@ export default function CreateUserModal({ onClose, onCreated, onError }) {
       password,
       username: username.trim() || undefined,
       is_admin: isAdmin,
+      platform,
     };
     if (!isAdmin) {
       payload.tab_limit = parseInt(tabLimit, 10) || 1;
@@ -91,6 +93,14 @@ export default function CreateUserModal({ onClose, onCreated, onError }) {
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="user">Regular User</option>
               <option value="admin">Administrator</option>
+            </select>
+          </Field>
+
+          <Field label="Allowed Platform" full>
+            <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+              <option value="both">App + Extension (both)</option>
+              <option value="app">App only</option>
+              <option value="extension">Extension only</option>
             </select>
           </Field>
 

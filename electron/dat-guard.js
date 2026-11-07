@@ -239,6 +239,45 @@ const lockJs = `
     document.addEventListener('click',     (e) => blockIfAtLimit(e, true),  true);
     document.addEventListener('mousedown', (e) => blockIfAtLimit(e, false), true);
 
+    // ── Block the DAT logo / home click (would navigate to the dashboard) ──────
+    const isLogoOrHome = (start) => {
+      let el = start;
+      for (let i = 0; i < 6 && el && el !== document; i++, el = el.parentElement) {
+        const cls = (el.getAttribute && el.getAttribute('class')) || '';
+        const id  = (el.id || '');
+        const dt  = (el.getAttribute && (el.getAttribute('data-test') || el.getAttribute('data-testid'))) || '';
+        if (/\\blogo\\b|navbar-brand|app-?logo|brand-?logo/i.test(cls + ' ' + id)) return true;
+        if (/logo|home|brand/i.test(dt)) return true;
+        const href = (el.getAttribute && el.getAttribute('href')) || '';
+        const rl   = (el.getAttribute && (el.getAttribute('routerlink') || el.getAttribute('ng-reflect-router-link'))) || '';
+        if (href) {
+          try {
+            const u = new URL(href, location.origin);
+            if (u.hostname.indexOf('one.dat.com') !== -1 || u.origin === location.origin) {
+              const p = u.pathname.replace(/\\/+$/, '');
+              if (p === '' || p === '/dashboard' || p === '/overview') return true;
+            }
+          } catch (_) {}
+        }
+        if (rl) {
+          const p = rl.replace(/\\/+$/, '');
+          if (p === '' || p === '/' || /dashboard|overview/i.test(p)) return true;
+        }
+      }
+      return false;
+    };
+    const blockLogoNav = (e) => {
+      try {
+        if (isLogoOrHome(e.target)) {
+          e.preventDefault();
+          e.stopImmediatePropagation();
+        }
+      } catch (_) {}
+    };
+    document.addEventListener('click',     blockLogoNav, true);
+    document.addEventListener('auxclick',  blockLogoNav, true);
+    document.addEventListener('mousedown', blockLogoNav, true);
+
   })();
 `;
 

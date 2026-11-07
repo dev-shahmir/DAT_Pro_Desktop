@@ -14,8 +14,11 @@
  * clear auth + wipe the DAT partition + push 'session:dead' to the renderer
  * so the UI returns to the login screen.
  */
+const { app } = require('electron');
 const BASE = 'https://dat-pro-backend.onrender.com/';
-const APP_VERSION = '3.0.5';
+// Real app version from package.json — keep in step with the backend app gate.
+const APP_VERSION = (() => { try { return app.getVersion(); } catch (_) { return '0.0.0'; } })();
+const PLATFORM = 'app';
 
 const HEARTBEAT_MS      = 60_000;
 const CHECK_SESSION_MS  = 15_000;
@@ -101,6 +104,7 @@ async function sendHeartbeat() {
     secret_key: s.secret_key,
     session_id: s.session_id,
     versionN: APP_VERSION,
+    platform: PLATFORM,
     device: device(),
     cookie_sync_time: s.cookie_session_updated_at || null,
     current_url:   snap.current_url,

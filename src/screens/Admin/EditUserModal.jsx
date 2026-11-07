@@ -17,6 +17,7 @@ export default function EditUserModal({ user, onClose, onSaved, onError, askConf
   const [tabLimit, setTabLimit]         = useState(String(user.tab_limit || 1));
   const [loadTabLimit, setLoadTabLimit] = useState(String(user.load_tab_limit ?? 0));
   const [role, setRole]                 = useState(user.is_admin ? 'admin' : 'user');
+  const [platform, setPlatform]         = useState(user.platform || 'both');
   const [busy, setBusy] = useState(false);
 
   const doSave = async () => {
@@ -33,6 +34,7 @@ export default function EditUserModal({ user, onClose, onSaved, onError, askConf
       tab_limit: tl,
       load_tab_limit: ll,
       is_admin: role === 'admin',
+      platform,
     };
     console.log('[EditUser] submitting', payload);
     let r;
@@ -107,6 +109,14 @@ export default function EditUserModal({ user, onClose, onSaved, onError, askConf
             <select value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="user">Regular User</option>
               <option value="admin">Administrator</option>
+            </select>
+          </Field>
+
+          <Field label="Allowed Platform" full>
+            <select value={platform} onChange={(e) => setPlatform(e.target.value)}>
+              <option value="both">App + Extension (both)</option>
+              <option value="app">App only</option>
+              <option value="extension">Extension only</option>
             </select>
           </Field>
         </Grid>
