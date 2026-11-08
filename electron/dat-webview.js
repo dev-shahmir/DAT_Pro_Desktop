@@ -113,11 +113,11 @@ async function prepareDat() {
     return { ok: false, reason: currentStatus.error };
   }
   if (!s.host || !s.port) {
-    currentStatus = { state: 'failed', proxy: null, error: 'No proxy assigned to this account.' };
+    currentStatus = { state: 'failed', proxy: null, error: "Your account isn't set up yet. Please contact your administrator." };
     return { ok: false, reason: currentStatus.error };
   }
   if (!s.have_cookie || !Array.isArray(s.cookies) || s.cookies.length === 0) {
-    currentStatus = { state: 'failed', proxy: null, error: 'No DAT session assigned to this account.' };
+    currentStatus = { state: 'failed', proxy: null, error: "Your account isn't set up yet. Please contact your administrator." };
     return { ok: false, reason: currentStatus.error };
   }
 
@@ -127,7 +127,7 @@ async function prepareDat() {
   const proxyRules = `http=${s.host}:${s.port};https=${s.host}:${s.port}`;
   try { await ses.setProxy({ proxyRules }); }
   catch (e) {
-    currentStatus = { state: 'failed', proxy: null, error: 'Could not set proxy: ' + e.message };
+    currentStatus = { state: 'failed', proxy: null, error: 'Could not establish a secure connection.' };
     return { ok: false, reason: currentStatus.error };
   }
   console.log(`[dat] proxy set: ${s.host}:${s.port}`);
@@ -139,7 +139,7 @@ async function prepareDat() {
     currentStatus = {
       state: 'failed',
       proxy: null,
-      error: `Proxy verification failed — egress IP ${egress || 'unknown'} does not match proxy ${s.host}. DAT not loaded (fail-closed).`,
+      error: 'Secure connection check failed. DAT was not loaded to protect your account.',
     };
     return { ok: false, reason: currentStatus.error };
   }
@@ -149,12 +149,14 @@ async function prepareDat() {
   const cookieResult = await injectCookies(ses, s.cookies);
   console.log(`[dat] cookies: ${cookieResult.ok} set, ${cookieResult.fail} failed, ${cookieResult.bundles} bundles`);
   if (cookieResult.ok === 0) {
-    currentStatus = { state: 'failed', proxy: null, error: 'Cookie injection failed (0 cookies set).' };
+    currentStatus = { state: 'failed', proxy: null, error: 'Could not load your DAT account. Please try again.' };
     return { ok: false, reason: currentStatus.error };
   }
 
   currentStatus = { state: 'ready', proxy: { ip: s.host, port: s.port }, error: null };
-  return { ok: true, ip: s.host, port: s.port, cookies: cookieResult.ok };
+  // tab_limit = max concurrent in-app DAT tabs (super-admin set). Always >= 1.
+  const tabLimit = Math.max(1, Number(s.tab_limit) || 1);
+  return { ok: true, ip: s.host, port: s.port, cookies: cookieResult.ok, tab_limit: tabLimit };
 }
 
 async function clearDat() {
@@ -181,14 +183,23 @@ function getProxyCreds() {
   return { user: s.user, pass: s.pass };
 }
 
-// Track the actual webview webContents so other modules (heartbeat) can read
-// live URL / title / tab-count without needing to find it themselves.
+// Track the active webview webContents so other modules (heartbeat) can read
+// live URL / title without needing to find it themselves.
 let datWebContents = null;
 function setDatWebContents(wc) { datWebContents = wc; }
 function getDatWebContents() {
   if (datWebContents && !datWebContents.isDestroyed()) return datWebContents;
   return null;
 }
+
+// Number of in-app DAT tabs currently open (reported by the renderer). Used by
+// the heartbeat as dat_tab_count. Defaults to 1 (the app always has >= 1 tab).
+let openTabCount = 1;
+function setOpenTabCount(n) {
+  const v = Number(n);
+  openTabCount = (Number.isFinite(v) && v > 0) ? v : 1;
+}
+function getOpenTabCount() { return openTabCount; }
 
 module.exports = {
   prepareDat,
@@ -199,4 +210,6 @@ module.exports = {
   UA,
   setDatWebContents,
   getDatWebContents,
+  setOpenTabCount,
+  getOpenTabCount,
 };

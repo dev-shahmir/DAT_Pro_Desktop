@@ -106,7 +106,7 @@ export default function App() {
     const unsubs = [];
     if (api.onSessionDead) {
       unsubs.push(api.onSessionDead(({ reason }) => {
-        setConnIssue({ type: 'session-dead', detail: reason || 'Your session has ended. Please login again.' });
+        setConnIssue({ type: 'session-dead', detail: reason || "You've been signed out. Please sign in again." });
         // Auto-logout and go to login after showing popup briefly
         setTimeout(() => {
           api.logout().catch(() => {});
@@ -177,7 +177,7 @@ export default function App() {
       {logoutConfirm && (
         <ConfirmDialog
           title="Log out"
-          message="End your session and return to the login screen?"
+          message="Sign out and return to the login screen?"
           confirmLabel="Log out"
           danger
           onCancel={() => setLogoutConfirm(false)}
@@ -225,7 +225,7 @@ const CONN_MESSAGES = {
   sleep: {
     icon: '💤',
     title: 'System Going to Sleep',
-    desc: 'Your laptop is going to sleep. Your session will resume when you wake it up.',
+    desc: "Your laptop is going to sleep. You'll be reconnected when you wake it up.",
     color: '#f59e0b',
   },
   reconnecting: {
@@ -236,20 +236,20 @@ const CONN_MESSAGES = {
   },
   'proxy-error': {
     icon: '🔌',
-    title: 'Proxy Connection Lost',
-    desc: 'The secure proxy connection to DAT was interrupted. This may be due to a network change or proxy server issue.',
+    title: 'Connection Lost',
+    desc: 'Your secure connection to DAT was interrupted. This may be due to a network change.',
     color: '#ef4444',
   },
   'session-dead': {
     icon: '⚠️',
-    title: 'Session Ended',
-    desc: 'Your session has ended. Please login again to continue.',
+    title: 'Signed Out',
+    desc: "You've been signed out. Please sign in again to continue.",
     color: '#ef4444',
   },
   'session-updated': {
     icon: '🔄',
-    title: 'Session Updated',
-    desc: 'Your session has been updated by the administrator. Please login again to continue with the new session.',
+    title: 'Account Updated',
+    desc: 'Your account was updated by the administrator. Please sign in again to continue.',
     color: '#3b82f6',
   },
 };

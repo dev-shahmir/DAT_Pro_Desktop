@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, session, powerMonitor } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, session, powerMonitor, webContents } = require('electron');
 const path = require('path');
 const auth = require('./auth');
 const store = require('./store');
@@ -199,8 +199,13 @@ app.on('web-contents-created', (_e, contents) => {
   });
 
   // ── Phase 5: expose this webContents to heartbeat + record nav events ──
+  // With multiple DAT tabs the renderer tells us which one is active (see the
+  // 'dat:active-tab' IPC); we still default to the newest here. On destroy we
+  // only clear the pointer if THIS was the tracked (active) tab.
   dat.setDatWebContents(contents);
-  contents.on('destroyed', () => dat.setDatWebContents(null));
+  contents.on('destroyed', () => {
+    if (dat.getDatWebContents() === contents) dat.setDatWebContents(null);
+  });
 
   // Only record top-level navigations inside DAT (skip Auth0 silent frames).
   contents.on('did-navigate', (_e, url) => {
@@ -240,10 +245,30 @@ app.whenReady().then(() => {
   // session is still alive, restart heartbeat so it doesn't fire a stale tick
   // and wrongly kick the user out. If the session is dead, do a full teardown
   // so the next login starts clean (no "already logged in" error).
+  // ── Sleep/suspend = full logout (security) ───────────────────────────────
+  // When the device goes to sleep we do NOT keep the session warm. We tear the
+  // whole thing down: stop heartbeat, wipe the DAT partition (cookies + proxy +
+  // cache), log out on the backend, and clear local credentials — then tell the
+  // renderer to return to the login screen. The user must sign in again on wake.
+  powerMonitor.on('suspend', async () => {
+    console.log('[main] OS suspend — logging out for security');
+    const sess = auth.getCurrentSession();
+    if (!sess) return; // not logged in — nothing to do
+    try { heartbeat.stop(); } catch (_) {}
+    try { await withTimeout(dat.clearDat(), 2000); } catch (_) {} // cookies, proxy, cache, partition
+    try { await withTimeout(auth.logout(), 2500); } catch (_) {}  // backend logout (best-effort)
+    auth.forceClear();                                            // local session + creds
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('session:dead', {
+        reason: 'You were signed out because your device went to sleep. Please sign in again.',
+      });
+    }
+  });
+
   powerMonitor.on('resume', async () => {
     console.log('[main] OS resume detected');
     const sess = auth.getCurrentSession();
-    if (!sess) return; // not logged in — nothing to do
+    if (!sess) return; // not logged in (e.g. logged out on suspend) — nothing to do
 
     const r = await auth.refreshSession();
     if (r && r.success) {
@@ -256,7 +281,7 @@ app.whenReady().then(() => {
       auth.forceClear();
       try { await dat.clearDat(); } catch (_) {}
       if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('session:dead', { reason: 'Session expired while your device was asleep. Please login again.' });
+        mainWindow.webContents.send('session:dead', { reason: 'You were signed out while your device was asleep. Please sign in again.' });
       }
     }
   });
@@ -313,6 +338,7 @@ function startHeartbeat() {
   heartbeat.start({
     getSession: () => auth.getCurrentSession(),
     getWebview: () => dat.getDatWebContents(),
+    getTabCount: () => dat.getOpenTabCount(),
     onSessionDead: async (reason) => {
       try { await dat.clearDat(); } catch (_) {}
       auth.forceClear();
@@ -327,7 +353,7 @@ function startHeartbeat() {
       if (mainWindow && !mainWindow.isDestroyed()) {
         try {
           mainWindow.webContents.send('session:updated', {
-            reason: 'Your session has been updated by the administrator. Please login again to continue with the new session.',
+            reason: 'Your account was updated by the administrator. Please sign in again to continue.',
           });
         } catch (_) {}
       }
@@ -339,7 +365,7 @@ function startHeartbeat() {
       if (mainWindow && !mainWindow.isDestroyed()) {
         try {
           mainWindow.webContents.send('session:updated', {
-            reason: 'Your proxy has been changed by the administrator. Please login again to connect with the new proxy.',
+            reason: 'Your connection settings were updated by the administrator. Please sign in again.',
           });
         } catch (_) {}
       }
@@ -398,6 +424,16 @@ ipcMain.handle('auth:clear-saved-email',()            => store.clearSavedEmail()
 ipcMain.handle('dat:prepare',    () => dat.prepareDat());
 ipcMain.handle('dat:get-status', () => dat.getStatus());
 ipcMain.handle('dat:clear',      () => dat.clearDat());
+
+// Multi-tab support: renderer reports how many DAT tabs are open (for the
+// heartbeat count) and which webContents is the active tab (for live URL/title).
+ipcMain.on('dat:tab-count', (_e, n) => dat.setOpenTabCount(n));
+ipcMain.on('dat:active-tab', (_e, webContentsId) => {
+  try {
+    const wc = webContents.fromId(webContentsId);
+    if (wc && !wc.isDestroyed()) dat.setDatWebContents(wc);
+  } catch (_) {}
+});
 
 // ── Admin / Super Admin IPC (Phase 6) ────────────────────────────────────────
 // secret_key + session_id are injected server-side by admin.js — the renderer

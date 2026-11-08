@@ -43,6 +43,9 @@ contextBridge.exposeInMainWorld('datProAPI', {
   prepareDat:      () => ipcRenderer.invoke('dat:prepare'),
   getDatStatus:    () => ipcRenderer.invoke('dat:get-status'),
   clearDat:        () => ipcRenderer.invoke('dat:clear'),
+  // Multi-tab: report open DAT tab count + which webview is the active tab.
+  setTabCount:     (n) => ipcRenderer.send('dat:tab-count', n),
+  setActiveTab:    (webContentsId) => ipcRenderer.send('dat:active-tab', webContentsId),
 
   // ── Session lifecycle push (Phase 5) ──────────────────────────────────────
   // Main pushes 'session:dead' when heartbeat / check-session finds the

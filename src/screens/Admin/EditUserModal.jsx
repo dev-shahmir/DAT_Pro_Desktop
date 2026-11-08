@@ -98,7 +98,7 @@ export default function EditUserModal({ user, onClose, onSaved, onError, askConf
             <input type="text" value={proxyCountry} onChange={(e) => setProxyCountry(e.target.value)} placeholder="USA" />
           </Field>
           <Field label="Browser Tabs Limit">
-            <input type="number" min="0" value={tabLimit} onChange={(e) => setTabLimit(e.target.value)} />
+            <input type="number" min="1" value={tabLimit} onChange={(e) => setTabLimit(e.target.value)} />
           </Field>
 
           <Field label="DAT Search Tab Limit (0 = ∞)" full>

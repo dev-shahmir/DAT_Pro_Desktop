@@ -79,12 +79,13 @@ async function readWebviewSnapshot() {
     if (!wc || wc.isDestroyed()) return snap;
     snap.current_url   = wc.getURL();
     snap.current_title = wc.getTitle();
+    // dat_tab_count = number of in-app DAT tabs the user has open (reported by
+    // the renderer). The app only hosts DAT, so total == dat count.
     try {
-      const n = await wc.executeJavaScript('window.__datTabCount || 0', true);
-      const val = Number(n);
+      const val = deps.getTabCount ? Number(deps.getTabCount()) : 1;
       if (Number.isFinite(val) && val >= 0) {
         snap.dat_tab_count = val;
-        snap.total_tab_count = val; // app only hosts the DAT view
+        snap.total_tab_count = val;
       }
     } catch (_) {}
   } catch (_) {}
@@ -123,7 +124,7 @@ async function sendHeartbeat() {
     return;
   }
   if (!r || !r.success) {
-    const reason = (r && r.message) || 'Session ended.';
+    const reason = (r && r.message) || "You've been signed out.";
     console.log('[heartbeat] session dead:', reason);
     stop();
     if (deps.onSessionDead) deps.onSessionDead(reason);
@@ -163,7 +164,7 @@ async function checkSession() {
   }, 10_000);
   if (r && r.networkError) return;
   if (!r || !r.success) {
-    const reason = (r && r.message) || 'Session ended.';
+    const reason = (r && r.message) || "You've been signed out.";
     console.log('[check-session] session dead:', reason);
     stop();
     if (deps.onSessionDead) deps.onSessionDead(reason);

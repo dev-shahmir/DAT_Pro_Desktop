@@ -122,7 +122,7 @@ export default function CreateUserModal({ onClose, onCreated, onError }) {
                 <input type="text" value={proxyCountry} onChange={(e) => setProxyCountry(e.target.value)} />
               </Field>
               <Field label="Browser Tabs Limit">
-                <input type="number" min="0" value={tabLimit} onChange={(e) => setTabLimit(e.target.value)} />
+                <input type="number" min="1" value={tabLimit} onChange={(e) => setTabLimit(e.target.value)} />
               </Field>
               <Field label="DAT Search Tab Limit (0 = ∞)" full>
                 <input type="number" min="0" value={loadTabLimit} onChange={(e) => setLoadTabLimit(e.target.value)} />

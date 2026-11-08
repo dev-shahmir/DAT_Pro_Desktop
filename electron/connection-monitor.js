@@ -46,13 +46,14 @@ function init(mainWindow) {
   }, 3000);
 
   // ── Sleep / Resume ──
+  // Sleep now triggers a FULL logout (handled in main.js via powerMonitor
+  // 'suspend'), so we no longer show the old "going to sleep / reconnecting"
+  // popups here — that flow drives the renderer back to the login screen.
   powerMonitor.on('suspend', () => {
-    console.log('[conn-monitor] OS suspend');
-    send({ type: 'sleep' });
+    console.log('[conn-monitor] OS suspend (logout handled in main)');
   });
   powerMonitor.on('resume', () => {
     console.log('[conn-monitor] OS resume');
-    send({ type: 'resume' });
   });
 
   // Cleanup on window close
