@@ -199,16 +199,29 @@ export default function App() {
 }
 
 function UpdateRequiredModal({ state, version, percent, onDownload, onInstall }) {
+  // Prevent Escape key from doing anything while update modal is active
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
+  }, []);
+
   const overlayStyle = {
     position: 'fixed',
     inset: 0,
     zIndex: 99999,
-    background: 'rgba(15, 23, 42, 0.85)',
-    backdropFilter: 'blur(10px)',
+    background: 'rgba(15, 23, 42, 0.88)',
+    backdropFilter: 'blur(12px)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    userSelect: 'none',
   };
 
   const modalStyle = {
