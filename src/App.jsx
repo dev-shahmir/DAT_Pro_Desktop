@@ -50,10 +50,20 @@ export default function App() {
     const api = window.datProAPI;
     if (!api || !api.update) return;
     const unsubs = [
-      api.update.onAvailable(({ version }) => { setUpdateVersion(version); setUpdateState('available'); setUpdateDetected(true); }),
+      api.update.onAvailable(({ version }) => {
+        setUpdateVersion(version);
+        setUpdateState('available');
+        setUpdateDetected(true);
+        // Force logout immediately from app & backend
+        try { api.logout().catch(() => {}); } catch (_) {}
+        goLogin();
+      }),
       api.update.onProgress(({ percent }) => { setUpdatePercent(percent); }),
       api.update.onDownloaded(() => { setUpdateState('ready'); }),
-      api.update.onError(() => { setUpdateState(null); }),
+      api.update.onError((err) => {
+        console.error('[updater] error:', err);
+        setUpdateState('error');
+      }),
     ];
     return () => unsubs.forEach((u) => u());
   }, []);
@@ -165,7 +175,7 @@ export default function App() {
       )}
 
       {updateState && (
-        <UpdateBanner
+        <UpdateRequiredModal
           state={updateState}
           version={updateVersion}
           percent={updatePercent}
@@ -188,29 +198,130 @@ export default function App() {
   );
 }
 
-function UpdateBanner({ state, version, percent, onDownload, onInstall }) {
-  const bannerStyle = {
-    position: 'fixed', bottom: 24, right: 24, zIndex: 1000,
-    background: 'var(--card-bg, #ffffff)', border: '1px solid var(--primary, #3b82f6)',
-    color: 'var(--text, #0f172a)', padding: '16px 24px', borderRadius: 'var(--radius, 12px)', fontSize: 14,
-    display: 'flex', alignItems: 'center', gap: 14,
-    backdropFilter: 'blur(12px)', boxShadow: '0 8px 28px var(--primary-glow, rgba(59,130,246,0.22))', maxWidth: '90vw',
+function UpdateRequiredModal({ state, version, percent, onDownload, onInstall }) {
+  const overlayStyle = {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 99999,
+    background: 'rgba(15, 23, 42, 0.85)',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
   };
+
+  const modalStyle = {
+    background: 'var(--card-bg, #1e293b)',
+    border: '1px solid rgba(59, 130, 246, 0.35)',
+    color: 'var(--text, #f8fafc)',
+    padding: '36px 32px',
+    borderRadius: '16px',
+    width: '100%',
+    maxWidth: 460,
+    textAlign: 'center',
+    boxShadow: '0 25px 60px rgba(0, 0, 0, 0.6), 0 0 35px rgba(59, 130, 246, 0.25)',
+  };
+
+  const iconStyle = {
+    fontSize: 48,
+    marginBottom: 16,
+    display: 'inline-block',
+  };
+
+  const titleStyle = {
+    fontSize: 22,
+    fontWeight: 700,
+    margin: '0 0 10px 0',
+    color: '#ffffff',
+  };
+
+  const descStyle = {
+    fontSize: 14,
+    lineHeight: 1.6,
+    color: '#94a3b8',
+    marginBottom: 24,
+  };
+
   const btnStyle = {
-    background: 'var(--primary, #3b82f6)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm, 8px)',
-    padding: '7px 18px', cursor: 'pointer', fontWeight: 600, fontSize: 13,
+    background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+    color: '#ffffff',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '13px 28px',
+    cursor: 'pointer',
+    fontWeight: 600,
+    fontSize: 15,
+    width: '100%',
+    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
   };
+
+  const progressTrackStyle = {
+    width: '100%',
+    height: 12,
+    background: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 6,
+    overflow: 'hidden',
+    margin: '18px 0 10px 0',
+  };
+
+  const progressFillStyle = {
+    height: '100%',
+    width: `${Math.min(100, Math.max(0, percent))}%`,
+    background: 'linear-gradient(90deg, #3b82f6, #60a5fa)',
+    borderRadius: 6,
+    transition: 'width 0.2s ease',
+  };
+
   return (
-    <div style={bannerStyle}>
-      {state === 'available' && <>
-        <span>Update v{version} available</span>
-        <button style={btnStyle} onClick={onDownload}>Download</button>
-      </>}
-      {state === 'downloading' && <span>Downloading update… {Math.round(percent)}%</span>}
-      {state === 'ready' && <>
-        <span>Update ready — restart to apply</span>
-        <button style={btnStyle} onClick={onInstall}>Restart Now</button>
-      </>}
+    <div style={overlayStyle}>
+      <div style={modalStyle}>
+        <div style={iconStyle}>
+          {state === 'ready' ? '✅' : state === 'error' ? '⚠️' : '🚀'}
+        </div>
+        <h2 style={titleStyle}>
+          {state === 'ready' ? 'Update Ready to Install' : 'Update Required'}
+        </h2>
+        <p style={descStyle}>
+          {state === 'ready'
+            ? `DAT Pro v${version} has been downloaded. Restart the app now to apply the update and continue.`
+            : `A new version of DAT Pro (v${version}) is available. For security and stability, your session has been closed. Please download and install the update to continue.`}
+        </p>
+
+        {state === 'available' && (
+          <button style={btnStyle} onClick={onDownload}>
+            Download Update (v{version})
+          </button>
+        )}
+
+        {state === 'downloading' && (
+          <div>
+            <div style={progressTrackStyle}>
+              <div style={progressFillStyle} />
+            </div>
+            <div style={{ fontSize: 13, color: '#38bdf8', fontWeight: 600 }}>
+              Downloading update… {Math.round(percent)}%
+            </div>
+          </div>
+        )}
+
+        {state === 'ready' && (
+          <button style={btnStyle} onClick={onInstall}>
+            Restart & Install Now
+          </button>
+        )}
+
+        {state === 'error' && (
+          <div>
+            <p style={{ color: '#f87171', fontSize: 13, marginBottom: 14 }}>
+              Failed to download update. Please check your internet connection.
+            </p>
+            <button style={btnStyle} onClick={onDownload}>
+              Retry Download
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

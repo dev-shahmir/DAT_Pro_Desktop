@@ -161,6 +161,8 @@ async function checkSession() {
   const r = await post('check-session/', {
     secret_key: s.secret_key,
     session_id: s.session_id,
+    versionN: APP_VERSION,
+    platform: PLATFORM,
   }, 10_000);
   if (r && r.networkError) return;
   if (!r || !r.success) {

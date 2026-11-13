@@ -9,8 +9,9 @@ function send(channel, data) {
   }
 }
 
-function init(mainWindow) {
+function init(mainWindow, opts = {}) {
   win = mainWindow;
+  const onUpdateAvailable = opts.onUpdateAvailable;
 
   try {
     autoUpdater = require('electron-updater').autoUpdater;
@@ -19,11 +20,17 @@ function init(mainWindow) {
     return;
   }
 
+  // Do NOT auto-download in background; user will be shown download option
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = true;
 
-  autoUpdater.on('update-available', (info) => {
+  autoUpdater.on('update-available', async (info) => {
     console.log('[updater] update available:', info.version);
+    if (onUpdateAvailable) {
+      try { await onUpdateAvailable(info.version); } catch (e) {
+        console.log('[updater] onUpdateAvailable error:', e && e.message);
+      }
+    }
     send('update:available', { version: info.version });
   });
 
@@ -55,6 +62,11 @@ function init(mainWindow) {
   setTimeout(() => {
     autoUpdater.checkForUpdates().catch(() => {});
   }, 5000);
+
+  // Periodic check every 5 minutes so running apps detect updates promptly
+  setInterval(() => {
+    autoUpdater.checkForUpdates().catch(() => {});
+  }, 5 * 60 * 1000);
 }
 
 module.exports = { init };

@@ -18,6 +18,14 @@ const lockCss = `
   a[href*="account.dat.com"], a[href*="billing"], [aria-label*="account" i] {
     display: none !important; pointer-events: none !important;
   }
+  /* Immediate CSS blocker for Usurp / Takeover modal & old containers */
+  #promptUsurpModalContainer,
+  .usurpModal,
+  [class*="usurp" i],
+  [id*="usurp" i] {
+    display: none !important;
+    pointer-events: none !important;
+  }
 `;
 
 const lockJs = `
@@ -185,7 +193,31 @@ const lockJs = `
         item.style.setProperty('pointer-events', 'none', 'important');
       });
 
-      // 5. Tab Limit Enforcement
+      // 5. Dismiss Usurp / "Logged in on another device" Modal & Backdrops
+      try {
+        const dialogCandidates = document.querySelectorAll(
+          'mat-dialog-container, [role="dialog"], .cdk-overlay-pane, .cdk-global-overlay-wrapper, .ui-dialog, [id*="usurp" i], [class*="usurp" i]'
+        );
+        dialogCandidates.forEach(dialog => {
+          const txt = (dialog.textContent || '').toLowerCase();
+          const isUsurp = (
+            (txt.includes('another device') && (txt.includes('logged in') || txt.includes('login anyway'))) ||
+            (txt.includes('oops!') && txt.includes('login anyway')) ||
+            txt.includes('promptusurpmodal') ||
+            txt.includes('usurpmodal')
+          );
+          if (isUsurp) {
+            const wrapper = dialog.closest('.cdk-global-overlay-wrapper') || dialog.closest('.cdk-overlay-container') || dialog;
+            wrapper.remove();
+            document.querySelectorAll('.cdk-overlay-backdrop, .ui-widget-overlay').forEach(b => b.remove());
+            console.log('[DAT-GUARD] Blocked and dismissed usurp modal (another device login)');
+          }
+        });
+      } catch(e) {
+        console.log('[DAT-GUARD] Usurp modal dismiss error:', e && e.message);
+      }
+
+      // 6. Tab Limit Enforcement
       // LIMIT <= 0  => unlimited (never disable; always re-enable if previously
       // disabled). LIMIT > 0 => cap enforced.
       try {

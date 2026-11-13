@@ -134,6 +134,37 @@ app.on('web-contents-created', (_e, contents) => {
   // WebRTC leak block — must be set per webContents, not per session.
   contents.setWebRTCIPHandlingPolicy('disable_non_proxied_udp');
 
+  // Zoom shortcuts for the DAT page. The app menu is removed, so Windows has
+  // no built-in zoom accelerators (macOS gets them from the native layer).
+  // We handle Ctrl/Cmd + '=' / '+' / '-' / '0' manually so zoom works the
+  // same on every platform. Clamped to a sane range.
+  const showZoomToast = () => {
+    const pct = Math.round(contents.getZoomFactor() * 100);
+    contents.executeJavaScript(`(function(p){
+      var id='__datZoomToast',e=document.getElementById(id);
+      if(!e){e=document.createElement('div');e.id=id;
+        e.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:2147483647;background:rgba(5,5,5,.9);color:#fff;font:600 14px/1 system-ui,sans-serif;padding:10px 16px;border-radius:10px;box-shadow:0 4px 18px rgba(0,0,0,.4);pointer-events:none;transition:opacity .3s';
+        document.body.appendChild(e);}
+      e.textContent=p+'%';e.style.opacity='1';
+      clearTimeout(window.__datZoomT);
+      window.__datZoomT=setTimeout(function(){e.style.opacity='0';},900);
+    })(${pct});`).catch(() => {});
+  };
+  contents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown' || !(input.control || input.meta)) return;
+    const k = input.key;
+    if (k === '=' || k === '+' || k === 'Add') {
+      contents.setZoomLevel(Math.min(contents.getZoomLevel() + 0.5, 5));
+      event.preventDefault(); showZoomToast();
+    } else if (k === '-' || k === 'Subtract') {
+      contents.setZoomLevel(Math.max(contents.getZoomLevel() - 0.5, -3));
+      event.preventDefault(); showZoomToast();
+    } else if (k === '0') {
+      contents.setZoomLevel(0);
+      event.preventDefault(); showZoomToast();
+    }
+  });
+
   // Navigation whitelist (Phase-0 decisions locked in):
   //   - allow any *.login.dat.com    (Auth0 silent refresh iframes)
   //   - allow any one.dat.com/search-loads*   (direct landing)
@@ -234,7 +265,17 @@ app.whenReady().then(() => {
   createMainWindow();
 
   // ── Auto-updater (Phase 8) ──────────────────────────────────────────────
-  if (!isDev) updater.init(mainWindow);
+  if (!isDev) {
+    updater.init(mainWindow, {
+      onUpdateAvailable: async (version) => {
+        console.log(`[main] update v${version} detected — forcing immediate logout and partition clear`);
+        try { heartbeat.stop(); } catch (_) {}
+        try { await dat.clearDat(); } catch (_) {}
+        try { await auth.logout(); } catch (_) {}
+        auth.forceClear();
+      }
+    });
+  }
 
   // ── Connection monitor (Phase 9) ──────────────────────────────────────
   connMonitor.init(mainWindow);
