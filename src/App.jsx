@@ -62,7 +62,11 @@ export default function App() {
       api.update.onDownloaded(() => { setUpdateState('ready'); }),
       api.update.onError((err) => {
         console.error('[updater] error:', err);
-        setUpdateState('error');
+        // Only surface the error modal if an update was ACTUALLY in progress.
+        // A failed background check (network blip, GitHub rate-limit, proxy,
+        // transient) must NOT pop the forced "Update Required" modal — that was
+        // the empty-version "(v)" dialog users kept seeing while up to date.
+        setUpdateState((s) => (s === 'available' || s === 'downloading' ? 'error' : s));
       }),
     ];
     return () => unsubs.forEach((u) => u());
